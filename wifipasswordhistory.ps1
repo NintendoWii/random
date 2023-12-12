@@ -8,6 +8,7 @@ function get-wifipasswordhistory{
     if (!$ssids){
         clear-host
         write-host "Nothing to show"
+    
         pause
         break
     }
