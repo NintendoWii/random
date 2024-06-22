@@ -1,5 +1,5 @@
-﻿$NetworkID= '41d49af6c2346b66'
-$token= 'A0xqhxxRInTtGykAXMIXfPYRiRjcoR0U'
+﻿$NetworkID= 'Your network ID'
+$token= 'Your token'
 
 function install-ZT ($path_to_installer){
     #Zt is masquerading as a .jpg. Rename it to .msi, install it and rename it back to jpg.
