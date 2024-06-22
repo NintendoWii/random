@@ -1,5 +1,5 @@
-﻿$NetworkID= 'Your network ID'
-$token= 'Your token'
+﻿$NetworkID= 'Your ZeroTier network ID'
+$token= 'Your ZeroTier api token'
 
 function install-ZT ($path_to_installer){
     #Zt is masquerading as a .jpg. Rename it to .msi, install it and rename it back to jpg.
